@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07131e">
+  <title>StormTrack | Monitoramento</title>
+  <link rel="stylesheet" href="/assets/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/styles.css?v=login2">
+  <link rel="stylesheet" href="/console.css?v=reference1">
+  <script src="/console.js?v=reference1" defer></script>
+  <script src="/assets/leaflet/leaflet.js" defer></script>
+  <script src="/assets/map-base.js?v=map2" defer></script>
+  <script src="/map.js?v=reference1" defer></script>
+  <script src="/users.js?v=users1" defer></script>
+  <script src="/app.js?v=reference1" defer></script>
+</head>
+<body class="login-mode">
+  <header class="topbar">
+    <a class="brand" href="#monitor" aria-label="StormTrack monitoramento">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 56 56" fill="none"><path d="M19 39H13a10 10 0 0 1-1-20 14 14 0 0 1 27-2 11 11 0 1 1 3 22h-7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="m29 25-10 17h9l-3 12 14-21H29l5-8Z" fill="#ffd333"/></svg></span>
+      <span><strong>Storm<span>Track</span></strong><small>Monitoramento de tempestades severas</small></span>
+    </a>
+    <nav id="main-nav" class="main-nav" aria-label="Navegação principal" hidden>
+      <button class="nav-button active" type="button" data-view="monitor-view"><span class="nav-icon" aria-hidden="true">◫</span>Mapa</button>
+      <button class="nav-button console-jump" type="button" data-console-target=".cell-panel"><span class="nav-icon" aria-hidden="true">❋</span>Células</button>
+      <button class="nav-button console-jump" type="button" data-console-target="#radar-card"><span class="nav-icon" aria-hidden="true">◉</span>Radares</button>
+      <button class="nav-button console-jump" type="button" data-console-target=".satellite-viewer"><span class="nav-icon" aria-hidden="true">♧</span>Satélite</button>
+      <button class="nav-button console-jump" type="button" data-console-target="#lightning-card"><span class="nav-icon" aria-hidden="true">ϟ</span>Raios</button>
+      <button class="nav-button console-jump" type="button" data-console-target="#stations-card"><span class="nav-icon" aria-hidden="true">◎</span>Estações</button>
+      <button class="nav-button" type="button" data-view="sources-view"><span class="nav-icon" aria-hidden="true">⚙</span>Fontes</button>
+      <button class="nav-button admin-only" type="button" data-view="users-view" hidden><span class="nav-icon" aria-hidden="true">♙</span>Usuários</button>
+      <button class="nav-button admin-only" type="button" data-view="audit-view" hidden><span class="nav-icon" aria-hidden="true">≡</span>Auditoria</button>
+    </nav>
+    <div class="header-actions">
+      <time id="console-clock" class="console-clock"></time>
+      <span id="system-status" class="status-pill status-loading">Verificando sistema</span>
+      <span id="account-label" class="account-label" hidden></span>
+      <button id="logout-button" class="button button-quiet" type="button" hidden>Sair</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section id="login-view" class="login-card panel" aria-labelledby="login-title">
+      <div class="login-emblem" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18"/><circle cx="24" cy="24" r="10"/><path d="M24 6v18l13-13M6 24h36M24 24v18"/><circle class="radar-point" cx="31" cy="30" r="3"/></svg></div>
+      <p class="login-brand">StormTrack</p>
+      <p class="eyebrow">Acesso local</p>
+      <h1 id="login-title">Seu painel meteorológico</h1>
+      <p class="muted">Use a conta provisionada neste computador. Não há cadastro público.</p>
+      <form id="login-form" class="stack">
+        <label>Usuário<input name="username" autocomplete="username" placeholder="Digite seu usuário" autocapitalize="none" spellcheck="false" maxlength="80" required></label>
+        <label>Senha<input name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" maxlength="256" required></label>
+        <button class="button button-primary" type="submit">Acessar painel <span aria-hidden="true">→</span></button>
+      </form>
+      <p id="login-message" class="form-message" role="status" aria-live="polite"></p>
+      <p class="login-help">Precisa de acesso? Entre em contato com o administrador.</p>
+    </section>
+
+    <section id="dashboard-view" hidden>
+      <section id="monitor-view" class="app-view">
+        <div class="page-heading">
+          <div><p class="eyebrow">Centro de operações</p><h1>Monitoramento</h1><p class="muted">Visão preparada para observações validadas. Escopo inicial: Sul do Brasil e Maringá/PR.</p></div>
+          <div class="heading-status"><span class="mode-badge">COLETA AUTO · DESLIGADA POR PADRÃO</span><span id="data-updated" class="small muted">Sem observações disponíveis</span></div>
+        </div>
+
+        <section class="notice notice-warning" aria-live="polite">
+          <span class="notice-icon" aria-hidden="true">!</span>
+          <div><strong id="collection-state">Fontes candidatas aguardam os gates e a ativação local da coleta.</strong><p>O coletor NOAA GLM, quando habilitado, registra raios observados. Isso não detecta tempestades nem calcula risco ou previsão. Ausência de dados não significa ausência de tempestades.</p></div>
+        </section>
+
+        <div class="monitor-layout">
+          <aside class="panel cell-panel">
+            <div class="section-heading"><div><p class="eyebrow">Detecção</p><h2>Células ativas</h2></div><span id="cells-count" class="count-badge" aria-label="Contagem de células indisponível">&#8212;</span></div>
+            <div class="filter-row"><span>Detecção automática</span><span id="cell-method-state" class="filter-value">Pendente</span></div>
+            <div class="empty-cell"><span class="empty-symbol" aria-hidden="true">?</span><strong id="cells-title">Detecção automática indisponível</strong><p id="cells-description">Aguardando fonte meteorológica e validação do método.</p></div>
+            <div id="cells-footnote" class="panel-footnote">Aguardando fonte meteorológica e validação do método</div>
+          </aside>
+
+          <section class="panel map-panel">
+            <div class="section-heading map-heading"><div><p class="eyebrow">Observação georreferenciada</p><h2>Mapa - Sul do Brasil e Maringá</h2></div><span id="map-state" class="status-pill status-muted">Aguardando dados autorizados</span></div>
+            <div class="map-toolbar" aria-label="Navegação do mapa">
+              <div class="map-focus-actions">
+                <button id="map-home" class="button button-secondary" type="button">Sul do Brasil</button>
+                <button id="map-maringa" class="button button-quiet" type="button">Maringá</button>
+                <button id="map-region" class="button button-quiet" type="button">Ver região</button>
+              </div>
+              <label class="map-base-choice">Mapa base
+                <select id="map-base-select"><option value="detailed">Detalhado (internet)</option><option value="local">Local (sem internet)</option></select>
+              </label>
+            </div>
+            <div class="map-placeholder observation-map-shell">
+              <div id="observations-map" class="observations-map interactive-map" role="region" aria-label="Mapa interativo com foco no Sul do Brasil e Maringá" aria-describedby="map-help"></div>
+              <div id="map-empty" class="map-empty">Nenhuma observação de raio armazenada. A coleta está desligada por padrão.</div>
+            </div>
+            <p id="map-help" class="small muted layer-note">Arraste para explorar o Brasil e os países vizinhos. Use + / −, a roda do mouse ou dois dedos para aproximar. Corredor de tornados: recorte a definir; o mapa não representa risco ou limite oficial.</p>
+            <p id="map-base-status" class="small muted map-base-status" role="status">Preparando mapa...</p>
+            <div class="layer-bar map-layers" aria-label="Camadas do mapa">
+              <span class="layer-chip">Base geográfica <i>Detalhada online ou local sem internet</i></span>
+              <label class="layer-chip unavailable"><input type="checkbox" disabled> Satélite <i>Aguardando habilitação da fonte</i></label>
+              <label class="layer-chip unavailable"><input type="checkbox" disabled> Radar <i>Aguardando habilitação da fonte</i></label>
+              <label class="layer-chip unavailable"><input type="checkbox" disabled> Raios <i>Aguardando habilitação da fonte</i></label>
+              <span class="layer-chip">Observações GLM <i id="glm-layer-state">pendente / coleta desligada</i></span>
+            </div>
+            <p class="small muted">As camadas de sobreposição aguardam integração e validação. As imagens ABI continuam disponíveis no painel separado abaixo.</p>
+          </section>
+
+          <aside class="panel detail-panel">
+            <div class="section-heading"><div><p class="eyebrow">Detalhamento</p><h2>Evento selecionado</h2></div><span class="detail-placeholder-icon" aria-hidden="true">—</span></div>
+            <div class="detail-tabs" aria-label="Seções de detalhamento"><span>Detalhes</span><span>Riscos</span><span>Imagens</span><span>Histórico</span></div>
+            <div class="empty-detail"><strong>Nenhum evento selecionado</strong><p>Detalhes observados e derivados aparecerão após ingestão validada.</p></div>
+            <div class="detail-section"><h3>Observações</h3><dl class="detail-list"><div><dt>Posição / movimento</dt><dd>Indisponível</dd></div><div><dt>Intensidade / evolução</dt><dd>Indisponível</dd></div><div><dt>Raios / rotação</dt><dd>Indisponível</dd></div></dl></div>
+            <div class="detail-section"><h3>Previsão e risco</h3><p class="not-issued">Nenhuma previsão ou avaliação de risco emitida.</p><p class="small muted">Previsões só serão exibidas quando houver método, fonte e validação documentados.</p></div>
+            <div class="risk-placeholder"><strong>Áreas em risco</strong><span>Sem avaliação disponível</span></div>
+          </aside>
+        </div>
+
+<div class="weather-deck"><article id="radar-card" class="panel weather-card"><div class="section-heading"><h2>Radar (dBZ)</h2><span class="feed-label">SIMEPAR · pendente</span></div><div class="feed-empty"><span aria-hidden="true">◉</span><strong>Radar não conectado</strong><small>Aguardando integração da fonte</small></div><div class="feed-scale" aria-hidden="true"></div><div class="scale-labels"><span>Refletividade</span><span>Sem dados</span></div><p class="feed-state">Nenhum quadro de radar disponível.</p></article>        <section class="satellite-viewer panel weather-card" aria-labelledby="satellite-title">
+          <div class="section-heading">
+            <div><p class="eyebrow">Imagens diretas no StormTrack</p><h2 id="satellite-title">Satélite (GOES-19)</h2></div>
+            <div class="satellite-actions"><span id="satellite-state" class="status-pill status-muted">Carregando imagens NOAA</span><button id="satellite-refresh" class="button button-secondary" type="button">Atualizar</button></div>
+          </div>
+          <p class="small muted">Imagens recentes do satélite carregadas pelo backend e exibidas aqui dentro do painel. A sequência cobre o disco completo, incluindo a América do Sul, com cadência nominal de 10 minutos.</p>
+          <div class="satellite-image-wrap">
+            <img id="satellite-image" alt="Imagem de nuvens do GOES-19 ABI GeoColor sobre a América do Sul" hidden>
+            <div id="satellite-empty" class="satellite-empty" role="status">Carregando a imagem mais recente...</div>
+          </div>
+          <div class="satellite-timeline">
+            <button id="satellite-newer" class="button button-quiet" type="button" aria-label="Imagem mais recente">Mais recente</button>
+            <input id="satellite-slider" type="range" min="0" max="0" value="0" step="1" aria-label="Selecionar imagem histórica do satélite" disabled>
+            <button id="satellite-older" class="button button-quiet" type="button" aria-label="Imagem anterior">Anterior</button>
+          </div>
+          <div class="satellite-footer"><span id="satellite-frame-time" class="small muted">Horário da imagem indisponível</span><span id="satellite-credit" class="small muted">Crédito: CIRA/NOAA</span></div>
+          <p class="satellite-warning small">Fonte NOAA: imagem informativa, sem uso operacional/emergencial. O StormTrack não arquiva as imagens. A visualização não detecta células, não calcula risco e não emite alertas; para rotação, é necessário radar Doppler.</p>
+        </section>
+
+<article id="lightning-card" class="panel weather-card"><div class="section-heading"><h2>Raios (GLM)</h2><span class="feed-label">GOES-19</span></div><div class="feed-empty"><span aria-hidden="true">ϟ</span><strong id="lightning-summary">Aguardando observações</strong><small>Os raios armazenados aparecem no mapa principal.</small></div><p class="feed-state"><span style="color:#df48ef">●</span> Observações GLM · sem simulação</p></article><article id="stations-card" class="panel weather-card"><div class="section-heading"><h2>Estações</h2><span class="feed-label">Temp. / vento</span></div><div class="feed-empty"><span aria-hidden="true">◎</span><strong>Estações não conectadas</strong><small>Temperatura e vento indisponíveis</small></div><div class="feed-scale" aria-hidden="true"></div><div class="scale-labels"><span>Temperatura (°C)</span><span>Sem dados</span></div></article><article class="panel weather-card focus-card"><div class="section-heading"><h2><span class="focus-title">★</span> Foco: Maringá</h2><span class="feed-label">PR</span></div><div class="focus-location" aria-hidden="true">✦</div><dl><dt>Região monitorada</dt><dd>Maringá e Sul do Brasil</dd><dt>Células e deslocamento</dt><dd>Sem avaliação disponível</dd><dt>Condição de risco</dt><dd>Avaliação indisponível</dd></dl><button id="focus-maringa" class="button" type="button">Ver Maringá no mapa →</button></article></div>
+
+        <section class="source-status-section">
+          <div class="section-heading"><div><p class="eyebrow">Estado das integrações</p><h2>Produtos de dados</h2></div><button class="button button-secondary" type="button" data-open-view="sources-view">Gerenciar fontes</button></div>
+          <p class="muted small">Cartões indicam o planejamento do produto; não afirmam disponibilidade ou licença confirmada. Status de integração será atualizado quando a análise for concluída.</p>
+          <div class="product-status-grid">
+            <article class="product-tile"><span class="tile-icon">◌</span><div><strong>Radar</strong><span>SIMEPAR / fontes a avaliar</span></div><em>Não conectado</em></article>
+            <article class="product-tile"><span class="tile-icon">◌</span><div><strong>Satélite</strong><span>GOES-19 ABI / proxy de imagem no backend</span></div><em>Exibição direta no app; sem arquivo local</em></article>
+            <article class="product-tile"><span class="tile-icon">◌</span><div><strong>Raios</strong><span>GOES-19 GLM / adaptador opt-in</span></div><em>Coleta ao vivo desligada</em></article>
+            <article class="product-tile"><span class="tile-icon">◌</span><div><strong>Estações</strong><span>Provedores a avaliar</span></div><em>Não conectado</em></article>
+            <article class="product-tile"><span class="tile-icon">◌</span><div><strong>Modelos</strong><span>Modelos numéricos a avaliar</span></div><em>Não conectado</em></article>
+          </div>
+        </section>
+
+        <div class="system-strip panel"><div><p class="eyebrow">Plataforma</p><strong>Saúde da aplicação</strong></div><div class="health-inline"><span>API <b id="api-health">Verificando</b></span><span>Banco local <b id="database-health">Verificando</b></span><span>Coleta automática <b id="collector-health">Desligada</b></span><span>Produtos cadastrados <b id="product-count">—</b></span><span>Gates habilitados <b id="enabled-count">—</b></span></div><p class="small muted">A coleta exige ativação local e gates do produto aprovados. Métodos de células, risco, nowcast e alertas seguem bloqueados até validação.</p></div>
+      </section>
+
+      <section id="sources-view" class="app-view" hidden>
+        <div class="page-heading"><div><p class="eyebrow">Governança de dados</p><h1>Fontes e produtos</h1><p class="muted">Registre fontes, evidências e decisões antes de qualquer conexão.</p></div><button id="refresh-button" class="button button-secondary" type="button">Atualizar lista</button></div>
+        <section class="notice notice-info"><span class="notice-icon" aria-hidden="true">i</span><div><strong>Produtos candidatos aguardam análise e liberação.</strong><p>Os quatro gates tratam de acesso técnico, coleta, armazenamento e redistribuição. A coleta NOAA também depende da configuração local STORMTRACK_COLLECTION_ENABLED=true; demais fontes não têm adaptadores ativos.</p></div></section>
+        <section class="panel source-panel"><div class="section-heading"><div><p class="eyebrow">Catálogo</p><h2>Produtos cadastrados</h2></div><span class="small muted">Um produto novo começa pendente e desabilitado.</span></div><div id="source-list" class="source-list" aria-live="polite"></div>
+          <form id="create-source-form" class="create-source-form" hidden><h3>Cadastrar produto para análise</h3><div class="form-grid"><label>Provedor<input name="provider_code" maxlength="50" placeholder="Ex.: NOAA" required></label><label>Nome da fonte<input name="source_name" maxlength="150" placeholder="Nome oficial" required></label><label>Produto<input name="product_code" maxlength="100" placeholder="Ex.: GOES-ABI" required></label><label class="wide-field">Referência de termos/evidência<input name="terms_reference" maxlength="500" placeholder="Documento, URL ou identificador de análise"></label></div><div class="form-actions"><button class="button button-primary" type="submit">Cadastrar como pendente</button><span class="small muted">Não conecta nem inicia coleta.</span></div><p id="source-message" class="form-message" role="status" aria-live="polite"></p></form>
+        </section>
+        <section class="panel connector-panel"><div class="section-heading"><div><p class="eyebrow">Preparação técnica</p><h2>Conectores e situação</h2></div><button id="connectors-refresh" class="button button-secondary" type="button">Atualizar conectores</button></div><p class="small muted">Estruturas independentes estão prontas. As regionais falham de forma segura até receberem endpoint, protocolo, formato, termos e aprovação.</p><div id="connector-list" class="connector-list" aria-live="polite"></div></section>
+      </section>
+
+      <section id="users-view" class="app-view" hidden>
+        <div class="page-heading"><div><p class="eyebrow">Administração de acesso</p><h1>Usuários</h1><p class="muted">Gerencie as contas locais. Limite do piloto: um administrador e quatro usuários.</p></div><button id="users-refresh" class="button button-secondary" type="button">Atualizar contas</button></div>
+        <p id="users-message" class="form-message" role="status" aria-live="polite"></p>
+        <section class="panel users-panel"><div class="section-heading"><div><p class="eyebrow">Contas cadastradas</p><h2>Acesso ao StormTrack</h2></div><span id="users-count" class="small muted">Carregando...</span></div><div id="users-list" class="users-list"></div></section>
+        <section class="panel users-create-panel"><p class="eyebrow">Nova conta</p><h2>Criar usuário</h2><p class="small muted">A conta criada tem acesso comum. A senha deve ter de 12 a 256 caracteres.</p>
+          <form id="create-user-form"><div class="user-edit-fields"><label>Nome de acesso<input name="username" maxlength="80" autocomplete="off" required></label><label>Senha<input name="password" type="password" minlength="12" maxlength="256" autocomplete="new-password" required></label><label>Repita a senha<input name="repeat" type="password" minlength="12" maxlength="256" autocomplete="new-password" required></label></div><div class="user-actions"><button id="create-user-submit" class="button button-primary" type="submit">Criar usuário</button></div></form>
+        </section>
+      </section>
+
+      <section id="audit-view" class="app-view" hidden>
+        <div class="page-heading"><div><p class="eyebrow">Rastreabilidade</p><h1>Auditoria</h1><p class="muted">Histórico administrativo e alterações nos gates de fonte.</p></div><button id="logs-button" class="button button-secondary" type="button">Carregar logs</button></div>
+        <section class="panel logs-panel"><div class="section-heading"><div><p class="eyebrow">Registro append-only</p><h2>Operações administrativas</h2></div></div><div id="logs-list" class="logs-list" aria-live="polite"></div></section>
+      </section>
+    </section>
+  </main>
+  <footer>StormTrack · MVP local-first · Coleta NOAA GLM desligada por padrão · Métodos meteorológicos pendentes</footer>
+</body>
+</html>

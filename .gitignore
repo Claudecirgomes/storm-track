@@ -1,0 +1,38 @@
+
+# Local credentials and configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.aws/
+.codex/
+.agents/
+.vercel/
+
+# Local databases, backups and generated artifacts
+/data/
+/output/
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-journal
+*.zip
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Operating system files
+.DS_Store
+Thumbs.db

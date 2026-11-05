@@ -58,7 +58,7 @@ def reserve(db, now, units):
             if (row[0] if row else 0)+units>limit:
                 raise SurfaceUnavailable('Orçamento local do Open-Meteo atingido; aguardando renovação da cota.')
         for period,_ in periods:
-            db.execute('INSERT INTO budget VALUES (?,?) ON CONFLICT(period) DO UPDATE SET units=units+excluded.units',(period,units))
+            db.execute('INSERT INTO budget VALUES (?,?) ON CONFLICT(period) DO UPDATE SET units=budget.units+excluded.units',(period,units))
         db.commit()
     except Exception:
         db.rollback();raise

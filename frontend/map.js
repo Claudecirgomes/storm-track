@@ -1,19 +1,19 @@
 /* Local geometry and Leaflet are bundled; only detailed basemap tiles use the network. */
 (() => {
-  const homeCenter = [-26.2, -51.2];
-  const homeZoom = 6.25;
-  const regionBounds = [[-39, -68], [-18, -44]];
+  const regionBounds = [[-36, -73], [-18, -42]];
   const maringa = [-23.4205, -51.9386];
   let map = null;
   let observations = [];
   let observationLayer = null;
   let detailedLayer = null;
+  let terrainLayer = null;
   let baseMode = "local";
   let resizeObserver = null;
   let loadedTiles = 0;
   let failedTiles = 0;
   let failedBatches = 0;
   let tileTimer = null;
+  let regionalMode = false;
 
   function validObservations(collection) {
     return (Array.isArray(collection?.features) ? collection.features : []).filter(feature => {
@@ -43,6 +43,14 @@
     if (!map) return;
     baseMode = mode;
     clearTimeout(tileTimer);
+    if (terrainLayer && map.hasLayer(terrainLayer)) map.removeLayer(terrainLayer);
+    if (mode === 'terrain') {
+      if (map.hasLayer(detailedLayer)) map.removeLayer(detailedLayer);
+      document.querySelector('#map-base-select').value='terrain';
+      terrainLayer.addTo(map);
+      baseStatus('Terreno NASA Blue Marble · base estática de agosto/2004; nuvens NOAA são observações separadas.');
+      return;
+    }
     if (mode === "detailed") {
       failedBatches = 0;
       loadedTiles = 0;
@@ -58,16 +66,8 @@
   }
 
   function drawObservations() {
-    if (!observationLayer) return;
-    observationLayer.clearLayers();
-    for (const feature of observations) {
-      const [lon, lat] = feature.geometry.coordinates;
-      const text = document.createElement("span");
-      text.textContent = `Raio observado · ${feature.properties?.observed_at || "horário indisponível"} · NOAA GOES-19 GLM`;
-      L.circleMarker([lat, lon], {
-        radius: 5, color: "#fff", weight: 1.5, fillColor: "#c817a8", fillOpacity: .95,
-      }).bindTooltip(text).addTo(observationLayer);
-    }
+    // Lightning is exclusive to its dedicated GLM card, including fallback mode.
+    if (observationLayer) observationLayer.clearLayers();
   }
 
   function ensureMap() {
@@ -78,7 +78,17 @@
       scrollWheelZoom: true, touchZoom: true, dragging: true, keyboard: true,
       preferCanvas: true,
     });
+    // Keep the Leaflet credit, without the flag SVG in its default prefix.
+    map.attributionControl.setPrefix('<a href="https://leafletjs.com/" title="Biblioteca de mapas interativos">Leaflet</a>');
     map.createPane("localBase");
+    map.createPane("satellite");
+    map.getPane("satellite").style.zIndex = "250";
+    map.getPane("satellite").style.pointerEvents = "none";
+    map.createPane("borders");
+    map.getPane("borders").style.zIndex = "350";
+    for (const collection of [stormtrackMapBase.countries, stormtrackMapBase.states]) {
+      L.geoJSON(collection, {pane:"borders", interactive:false, style:{color:"#e2e6dc",weight:.8,opacity:.85,fill:false}}).addTo(map);
+    }
     map.getPane("localBase").style.zIndex = "180";
     map.getPane("localBase").style.pointerEvents = "none";
     const colors = {Brazil:"#123b39", Argentina:"#17333c", Uruguay:"#19413e", Paraguay:"#23463a", Bolivia:"#28443c", Chile:"#253c43", Peru:"#24433d"};
@@ -97,6 +107,13 @@
       maxZoom:19, noWrap:true,
       attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
     });
+    terrainLayer=L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg',{
+      maxNativeZoom:8,maxZoom:18,noWrap:true,
+      attribution:'NASA GIBS / Blue Marble · terreno estático (2004)',
+    });
+    let terrainErrors=0;
+    terrainLayer.on('tileload',()=>{terrainErrors=0;});
+    terrainLayer.on('tileerror',()=>{if (++terrainErrors>=4 && baseMode==='terrain') queueMicrotask(()=>{if(baseMode==='terrain') setBase('local','Terreno indisponível; base local ativa.');});});
     detailedLayer.on("loading", () => {
       loadedTiles = 0;
       failedTiles = 0;
@@ -138,10 +155,10 @@
       ["Montevidéu",-34.90,-56.16],
     ]) L.circleMarker([lat,lon], {radius:3, color:"#365b68", weight:1, fillColor:"#fff", fillOpacity:1}).bindTooltip(name).addTo(map);
     observationLayer = L.layerGroup().addTo(map);
-    map.setView(homeCenter, homeZoom, {animate:false});
+    map.fitBounds(regionBounds, {padding:[8,8],animate:false});
     drawObservations();
     document.querySelector("#map-base-select").addEventListener("change", event => setBase(event.target.value));
-    document.querySelector("#map-home").addEventListener("click", () => map.setView(homeCenter, homeZoom));
+    document.querySelector("#map-home").addEventListener("click", () => map.fitBounds([[-34,-58],[-22,-48]]));
     document.querySelector("#map-maringa").addEventListener("click", () => map.setView(maringa, 9));
     document.querySelector("#map-region").addEventListener("click", () => map.fitBounds(regionBounds, {padding:[18,18]}));
     map.zoomControl._zoomInButton.setAttribute("aria-label", "Aproximar mapa");
@@ -150,7 +167,7 @@
       resizeObserver = new ResizeObserver(() => { if (container.clientWidth) map.invalidateSize({pan:false}); });
       resizeObserver.observe(container);
     }
-    setBase(navigator.onLine ? "detailed" : "local");
+    setBase("terrain");
     return map;
   }
 
@@ -167,6 +184,8 @@
       if (existing) drawObservations();
       return observations.length;
     },
+    instance() { return ensureMap(); },
+    regional(active) { regionalMode = active; drawObservations(); },
     clearObservations() {
       observations = [];
       if (observationLayer) observationLayer.clearLayers();

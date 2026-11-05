@@ -2,6 +2,16 @@
 
 ## Estado atual
 
+Para iniciar **servidor e coleta NOAA juntos**, execute
+`.venv\Scripts\python.exe -m backend.app.scripts.start_local`.
+O coletor agora usa [fila persistente para todas as atualizações das fontes ativas](docs/COLETA_TODAS_ATUALIZACOES.md).
+O cartão [Temperatura / Vento](docs/SUPERFICIE_OPEN_METEO.md) usa modelos Open-Meteo, com minimapa e consulta por ponto.
+Veja [atualização, camadas de tempestades e referência do mapa](docs/MONITOR_TEMPESTADES_REFERENCIA.md).
+
+Nova integração regional local no mapa central: veja [operação e limitações](docs/SATELITE_REGIONAL.md).
+Ela usa um coletor separado para ABI C13, RGB alternativo diurno/noturno e flashes GLM.
+O RGB alternativo é identificado corretamente e não representa GeoColor CIRA completo.
+
 O repositório contém fundação local, catálogo de fontes, governança por gates, pipeline opt-in para NOAA GOES-19 GLM-L2-LCFA, persistência de observações, API autenticada de leitura, grade geográfica local e registros de execução/saúde.
 
 A coleta meteorológica está desligada por padrão. Os gates NOAA GLM permanecem pendentes e nenhuma coleta real GLM foi validada neste ambiente. O painel passou a obter quadros JPEG públicos do GOES-19 ABI GeoColor pelo backend e exibi-los internamente, com atualização periódica e seleção dos quadros recentes. Isso é um proxy de imagem ao vivo, sem persistência, parser meteorológico ou ingestão ABI. A imagem NOAA é informativa e não deve ser usada para decisão operacional ou emergencial.
@@ -126,3 +136,9 @@ Os testes HTTP são ignorados se FastAPI/HTTPX não estiverem disponíveis. A su
 - docs/StormTrack_Diagramas_Auditados_v1.3.md — diagramas arquiteturais em revisão
 
 Consulte também o PDF consolidado e pacote ZIP mais recentes em output. Nenhum documento afirma garantia matemática de ausência de defeitos.
+# Extensão GOES multicamadas e pesquisa local
+
+Veja [execução, evidências, orçamento e pendências](docs/GOES_MULTICAMADAS_IA.md)
+e a [matriz de camadas com status separado](docs/GOES_MATRIZ_CAMADAS.md).
+
+Veja também a [configuração do coletor online e seus limites](docs/COLETOR_ONLINE.md).

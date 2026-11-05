@@ -1,0 +1,51 @@
+.map-panel .regional-controls{padding:8px 0;color:#c8dae7;font-size:11px}
+.map-panel .regional-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.map-panel .regional-row label{display:flex;align-items:center;gap:5px;font-size:11px}
+.map-panel .regional-row button,.map-panel .regional-row select{background:#0b2235;color:#e1eafa;border:1px solid #426075;border-radius:4px;min-height:34px;padding:4px 8px;font-size:11px}
+.map-panel .regional-row input[type=checkbox]{width:18px;min-height:18px}
+.map-panel #regional-opacity{width:70px;min-height:20px}
+.map-panel #regional-product{max-width:min(340px,70vw)}
+.map-panel #regional-search{background:#0b2235;color:#e1eafa;border:1px solid #426075;border-radius:4px;min-height:34px;max-width:160px;padding:4px 8px}
+.map-panel .wind-vector span{display:block;font-size:24px;line-height:20px;color:#f7d77c;text-shadow:0 1px 2px #000;transform-origin:center}
+.map-panel #regional-wind-status{font-size:11px;margin:6px 0;color:#c8dae7}
+#lightning-map{height:240px;min-height:200px;background:#081f30;border:1px solid #426075;border-radius:6px;isolation:isolate}
+#lightning-card .lightning-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+#lightning-card .lightning-toolbar label{display:flex;align-items:center;gap:5px;font-size:12px}
+#lightning-window{background:#0b2235;color:#e1eafa;border:1px solid #426075;border-radius:4px;min-height:32px}
+#lightning-summary{font-size:13px;margin:10px 0 6px;color:#e1eafa}
+#lightning-status,#lightning-card small{font-size:11px;line-height:1.5;color:#c8dae7}
+#lightning-map .leaflet-control-attribution{font-size:8px}
+#lightning-map .leaflet-tooltip{color:#243d47;background:#fffffff0}
+/* Brazil/South America crop only inside the small GOES card. */
+.weather-deck .satellite-viewer .satellite-image-wrap{position:relative;height:240px;min-height:240px;overflow:hidden}
+.weather-deck .satellite-viewer .satellite-image-wrap #satellite-image{position:absolute;left:50%;top:50%;width:300%;max-width:none;height:auto;max-height:none;object-fit:initial;transform:translate(-66%,-74%)}
+.surface-card #surface-map{height:240px;background:#081f30;border:1px solid #426075;border-radius:6px;isolation:isolate}
+.surface-modes,.surface-actions{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}
+.surface-modes button{flex:1;padding:6px 4px;border:1px solid #426075;border-radius:4px;background:#0b2235;color:#c8dae7;font-size:10px;min-height:32px;cursor:pointer}
+.surface-modes button[aria-pressed=true]{background:#195578;color:#fff;border-color:#64c5e8}
+.surface-actions button{flex:1;font-size:10px;padding:6px 5px}
+.surface-gradient{height:8px;margin-top:5px;background:linear-gradient(to right,rgb(40,80,190),rgb(30,185,225),rgb(80,190,110),rgb(245,215,65),rgb(245,125,45),rgb(205,45,65))}
+.surface-ticks{display:flex;justify-content:space-between;font-size:9px;color:#c8dae7}
+.surface-note,#surface-status,.surface-card small{font-size:10px;line-height:1.5;color:#c8dae7;margin:6px 0}
+.surface-wind span{display:block;width:32px;height:32px;line-height:32px;text-align:center;color:#fff;text-shadow:0 1px 2px #000,1px 0 2px #000;transform-origin:center}
+.surface-card .leaflet-control-attribution{font-size:8px}
+.surface-card .leaflet-popup-content,.surface-card .leaflet-tooltip{color:#263e48}
+.surface-main-info{display:grid;gap:6px;max-width:220px;padding:8px;border:1px solid #64c5e8;border-radius:5px;background:#071b2bf2;color:#e1eafa;font:11px system-ui}
+.surface-main-info button{background:#195578;color:#fff;border:1px solid #426075;border-radius:4px;padding:5px;cursor:pointer}
+.map-panel .observations-map.interactive-map{height:auto;min-height:430px;aspect-ratio:1.56}
+.map-panel #regional-time{flex:1;min-width:70px;min-height:30px}
+.map-panel .regional-gradient{height:9px;background:transparent}
+.map-panel .regional-ticks{height:16px;position:relative}
+.map-panel .regional-ticks span{position:absolute;transform:translateX(-50%)}
+.map-panel .regional-ticks span:nth-child(1){left:0;transform:none}
+.map-panel .regional-ticks span:nth-child(2){left:15.4%}
+.map-panel .regional-ticks span:nth-child(3){left:30.8%}
+.map-panel .regional-ticks span:nth-child(4){left:46.2%}
+.map-panel .regional-ticks span:nth-child(5){right:0;transform:none}
+.map-panel #regional-status{margin:6px 0;font-size:11px}
+.map-panel.regional-active #map-empty{display:none!important}
+.map-panel .observations-map{background:#030710!important}
+.map-panel.regional-expanded{position:fixed;inset:10px;z-index:2000;margin:0;max-width:none;overflow:auto;box-shadow:0 0 0 20px #020f19}
+.map-panel.regional-expanded .observation-map-shell{flex:1 0 auto;min-height:calc(100dvh - 340px)}
+.map-panel.regional-expanded .observations-map.interactive-map{height:calc(100dvh - 340px);min-height:280px}
+@media(max-width:650px){.map-panel.regional-expanded{inset:4px}.map-panel.regional-expanded .observations-map.interactive-map{height:calc(100dvh - 390px);min-height:260px}}

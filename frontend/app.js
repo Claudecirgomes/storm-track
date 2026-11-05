@@ -67,6 +67,8 @@ function showDashboard(account) {
   for (const element of document.querySelectorAll(".admin-only")) element.hidden = account.role !== "ADMIN";
   setHealth("status-ok", "Sessão autenticada");
   navigate("monitor-view");
+  window.StormTrackRegional?.refresh();
+  window.StormTrackSurface?.refresh();
   refreshProducts();
   refreshObservations();
   refreshIngestion();
@@ -83,10 +85,12 @@ function showDashboard(account) {
   }, 60000);
   state.satelliteRefreshTimer = setInterval(() => {
     if (state.account && state.view === "monitor-view") refreshSatelliteFrames();
-  }, 300000);
+  }, 30000);
 }
 
 function showLogin(message = "") {
+  window.StormTrackSurface?.clear();
+  window.StormTrackRegional?.clear();
   document.body.classList.add("login-mode");
   window.StormTrackMap.clearObservations();
   window.StormTrackUsers.clear();
@@ -354,17 +358,7 @@ async function refreshConnectors() {
 }
 
 function renderObservationMap(collection) {
-  const count = window.StormTrackMap.updateObservations(collection);
-  $("#lightning-summary").textContent = count ? `${count} raio(s) armazenado(s)` : "Aguardando observações";
-  const features = Array.isArray(collection?.features) ? collection.features : [];
-  const empty = $("#map-empty");
-  empty.hidden = count > 0;
-  empty.textContent = "Nenhuma observação de raio armazenada. A base geográfica continua disponível.";
-  const badge = $("#map-state");
-  badge.className = `status-pill ${count ? "status-ok" : "status-muted"}`;
-  badge.textContent = count ? `${count} raio(s) armazenado(s)` : "Sem observações";
-  const latest = features[0]?.properties?.observed_at;
-  $("#data-updated").textContent = latest ? `Observado em ${latest}` : "Sem observações disponíveis";
+  window.StormTrackMap.updateObservations(collection);
 }
 
 async function refreshObservations() {

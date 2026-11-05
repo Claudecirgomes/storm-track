@@ -2,4 +2,6 @@ fastapi[standard]
 httpx
 pytest
 netCDF4>=1.6,<2
+Pillow>=10,<13
+pyproj>=3.6,<4
 psycopg[binary]>=3.2,<4

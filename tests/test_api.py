@@ -50,6 +50,20 @@ class ApiAuthorizationTests(unittest.TestCase):
         self.assertEqual(self.client.get("/app.js").status_code, 200)
         self.assertEqual(self.client.get("/styles.css").status_code, 200)
 
+    def test_regional_satellite_authentication_and_input_validation(self):
+        self.assertEqual(self.client.get('/api/satellite/regional/catalog').status_code,401)
+        self.assertEqual(self.client.get('/api/weather/surface').status_code,401)
+        self.assertEqual(self.client.get('/api/weather/surface/point?lat=-23&lon=-52').status_code,401)
+        token = self.token('user1', 'User!Password2026-1')
+        headers = {'Authorization': f'Bearer {token}'}
+        self.assertEqual(self.client.get('/api/weather/surface/point?lat=60&lon=-50',headers=headers).status_code,422)
+        response = self.client.get('/api/satellite/regional/catalog',headers=headers)
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.json()['frames'],[])
+        self.assertEqual(self.client.get('/api/satellite/regional/image/invalid.png',headers=headers).status_code,404)
+        self.assertEqual(self.client.get('/api/satellite/regional/flashes?end=invalid',headers=headers).status_code,422)
+        self.assertEqual(self.client.get('/api/satellite/regional/flashes?end=2026-01-01T00:00:00Z',headers=headers).json()['state'],'unavailable')
+
     def test_user_cannot_configure_source_and_session_revokes(self):
         user_token = self.token("user1", "User!Password2026-1")
         headers = {"Authorization": f"Bearer {user_token}"}

@@ -11,9 +11,13 @@
   <script src="/console.js?v=reference1" defer></script>
   <script src="/assets/leaflet/leaflet.js" defer></script>
   <script src="/assets/map-base.js?v=map2" defer></script>
-  <script src="/map.js?v=reference1" defer></script>
+  <script src="/map.js?v=glm-card1" defer></script>
   <script src="/users.js?v=users1" defer></script>
-  <script src="/app.js?v=reference1" defer></script>
+  <script src="/app.js?v=surface1" defer></script>
+  <link rel="stylesheet" href="/regional-satellite.css?v=surface1">
+  <script src="/lightning-card.js?v=glm-card1" defer></script>
+  <script src="/surface-weather.js?v=surface1" defer></script>
+  <script src="/regional-satellite.js?v=surface1" defer></script>
 </head>
 <body class="login-mode">
   <header class="topbar">
@@ -85,12 +89,12 @@
                 <button id="map-region" class="button button-quiet" type="button">Ver região</button>
               </div>
               <label class="map-base-choice">Mapa base
-                <select id="map-base-select"><option value="detailed">Detalhado (internet)</option><option value="local">Local (sem internet)</option></select>
+                <select id="map-base-select"><option value="terrain">Terreno — referência (NASA)</option><option value="detailed">Detalhado (internet)</option><option value="local">Local (sem internet)</option></select>
               </label>
             </div>
             <div class="map-placeholder observation-map-shell">
               <div id="observations-map" class="observations-map interactive-map" role="region" aria-label="Mapa interativo com foco no Sul do Brasil e Maringá" aria-describedby="map-help"></div>
-              <div id="map-empty" class="map-empty">Nenhuma observação de raio armazenada. A coleta está desligada por padrão.</div>
+              <div id="map-empty" class="map-empty">Sem quadros de satélite disponíveis. A base geográfica permanece acessível.</div>
             </div>
             <p id="map-help" class="small muted layer-note">Arraste para explorar o Brasil e os países vizinhos. Use + / −, a roda do mouse ou dois dedos para aproximar. Corredor de tornados: recorte a definir; o mapa não representa risco ou limite oficial.</p>
             <p id="map-base-status" class="small muted map-base-status" role="status">Preparando mapa...</p>
@@ -98,8 +102,6 @@
               <span class="layer-chip">Base geográfica <i>Detalhada online ou local sem internet</i></span>
               <label class="layer-chip unavailable"><input type="checkbox" disabled> Satélite <i>Aguardando habilitação da fonte</i></label>
               <label class="layer-chip unavailable"><input type="checkbox" disabled> Radar <i>Aguardando habilitação da fonte</i></label>
-              <label class="layer-chip unavailable"><input type="checkbox" disabled> Raios <i>Aguardando habilitação da fonte</i></label>
-              <span class="layer-chip">Observações GLM <i id="glm-layer-state">pendente / coleta desligada</i></span>
             </div>
             <p class="small muted">As camadas de sobreposição aguardam integração e validação. As imagens ABI continuam disponíveis no painel separado abaixo.</p>
           </section>
@@ -133,7 +135,21 @@
           <p class="satellite-warning small">Fonte NOAA: imagem informativa, sem uso operacional/emergencial. O StormTrack não arquiva as imagens. A visualização não detecta células, não calcula risco e não emite alertas; para rotação, é necessário radar Doppler.</p>
         </section>
 
-<article id="lightning-card" class="panel weather-card"><div class="section-heading"><h2>Raios (GLM)</h2><span class="feed-label">GOES-19</span></div><div class="feed-empty"><span aria-hidden="true">ϟ</span><strong id="lightning-summary">Aguardando observações</strong><small>Os raios armazenados aparecem no mapa principal.</small></div><p class="feed-state"><span style="color:#df48ef">●</span> Observações GLM · sem simulação</p></article><article id="stations-card" class="panel weather-card"><div class="section-heading"><h2>Estações</h2><span class="feed-label">Temp. / vento</span></div><div class="feed-empty"><span aria-hidden="true">◎</span><strong>Estações não conectadas</strong><small>Temperatura e vento indisponíveis</small></div><div class="feed-scale" aria-hidden="true"></div><div class="scale-labels"><span>Temperatura (°C)</span><span>Sem dados</span></div></article><article class="panel weather-card focus-card"><div class="section-heading"><h2><span class="focus-title">★</span> Foco: Maringá</h2><span class="feed-label">PR</span></div><div class="focus-location" aria-hidden="true">✦</div><dl><dt>Região monitorada</dt><dd>Maringá e Sul do Brasil</dd><dt>Células e deslocamento</dt><dd>Sem avaliação disponível</dd><dt>Condição de risco</dt><dd>Avaliação indisponível</dd></dl><button id="focus-maringa" class="button" type="button">Ver Maringá no mapa →</button></article></div>
+<article id="lightning-card" class="panel weather-card"><div class="section-heading"><h2>Raios (GLM)</h2><span class="feed-label">GOES-19</span></div><div class="lightning-toolbar"><label>Janela <select id="lightning-window"><option>1</option><option>5</option><option selected>10</option><option>15</option></select> min</label><button id="lightning-refresh" class="button button-secondary" type="button">Atualizar</button></div><div id="lightning-map" role="region" aria-label="Mapa de descargas GLM"></div><p id="lightning-summary" role="status">Aguardando observações</p><p id="lightning-status" class="feed-state">Aguardando coleta GLM.</p><small>NOAA GLM · inclui descargas intranuvem; os pontos não identificam impactos no solo.</small><span id="glm-layer-state" hidden></span></article><article id="stations-card" class="panel weather-card surface-card">
+  <div class="section-heading"><h2>Temperatura / Vento</h2><span class="feed-label">Modelo · Open-Meteo</span></div>
+  <div class="surface-modes" role="group" aria-label="Camada de superfície">
+    <button type="button" data-surface-mode="temperature" aria-pressed="false">Temperatura</button>
+    <button type="button" data-surface-mode="wind" aria-pressed="false">Vento</button>
+    <button type="button" data-surface-mode="combined" aria-pressed="true">Combinado</button>
+  </div>
+  <div id="surface-map" role="region" aria-label="Minimapa de temperatura a 2 metros e vento a 10 metros"></div>
+  <div id="surface-temperature-legend"><small>Temperatura a 2 m (°C)</small><div class="surface-gradient"></div><div class="surface-ticks"><span>−5</span><span>5</span><span>15</span><span>25</span><span>35</span><span>45</span></div></div>
+  <p id="surface-wind-legend" class="surface-note">Setas: sentido do vento a 10 m; tamanho proporcional à velocidade (km/h).</p>
+  <p id="surface-status" role="status">Aguardando consulta ao modelo.</p>
+  <p id="surface-timeline-note" class="surface-note" hidden>O cartão mostra o modelo atual. A camada principal fica suspensa durante o replay.</p>
+  <div class="surface-actions"><button id="surface-refresh" type="button" class="button button-secondary">Atualizar</button><button id="surface-expand" type="button" class="button button-secondary" disabled>Ampliar no mapa principal</button></div>
+  <small>Open-Meteo · modelos meteorológicos, não estações. Pontos amostrados na região. Toque para consultar uma localização.</small>
+</article><article class="panel weather-card focus-card"><div class="section-heading"><h2><span class="focus-title">★</span> Foco: Maringá</h2><span class="feed-label">PR</span></div><div class="focus-location" aria-hidden="true">✦</div><dl><dt>Região monitorada</dt><dd>Maringá e Sul do Brasil</dd><dt>Células e deslocamento</dt><dd>Sem avaliação disponível</dd><dt>Condição de risco</dt><dd>Avaliação indisponível</dd></dl><button id="focus-maringa" class="button" type="button">Ver Maringá no mapa →</button></article></div>
 
         <section class="source-status-section">
           <div class="section-heading"><div><p class="eyebrow">Estado das integrações</p><h2>Produtos de dados</h2></div><button class="button button-secondary" type="button" data-open-view="sources-view">Gerenciar fontes</button></div>

@@ -346,5 +346,114 @@ def operation_logs(
     return [dict(row) for row in rows]
 
 
+@app.get('/api/satellite/regional/catalog')
+def regional_catalog(_: dict = Depends(current_account)):
+    if get_settings().serverless:
+        from backend.app.adapters.cloud_weather import catalog
+        return catalog()
+    from backend.app.adapters.regional_satellite import catalog
+    return catalog()
+
+
+@app.get('/api/satellite/regional/flashes')
+def regional_flashes(end: str, minutes: int = 10, _: dict = Depends(current_account)):
+    if get_settings().serverless:
+        from backend.app.adapters.cloud_weather import flashes
+    else:
+        from backend.app.adapters.regional_satellite import flashes
+    try:
+        return flashes(end, minutes)
+    except (ValueError, OverflowError):
+        raise HTTPException(status_code=422, detail='Invalid timezone-aware end time')
+
+
+@app.get('/api/satellite/regional/image/{filename}')
+def regional_image(filename: str, _: dict = Depends(current_account)):
+    if get_settings().serverless:
+        from backend.app.adapters.cloud_weather import rendered_asset
+        try:
+            return Response(rendered_asset(filename),media_type='image/png',headers={'Cache-Control':'private, max-age=600'})
+        except (ValueError,FileNotFoundError):
+            raise HTTPException(status_code=404)
+    import re
+    from fastapi.responses import FileResponse
+    from backend.app.adapters.regional_satellite import root
+    from backend.app.adapters.goes_layers import RGB
+    from backend.app.adapters.goes_products import RASTER_LAYERS
+    match = re.fullmatch(r'[a-f0-9]{24}-([a-z0-9-]+)\.png', filename)
+    if not match or (match[1] not in {'c13','rgb','reference','enhancement','tops','tops-overlay','gray','split-window','fog','phase','split-vapor','split-ozone','vapor-window',*RGB,*RASTER_LAYERS} and not re.fullmatch(r'abi(0[1-9]|1[0-6])',match[1])):
+        raise HTTPException(status_code=404)
+    file = root() / filename
+    if not file.is_file():
+        raise HTTPException(status_code=404)
+    return FileResponse(file, media_type='image/png')
+
+
+@app.get('/api/satellite/regional/layers')
+def satellite_layers(_: dict = Depends(current_account)):
+    from backend.app.adapters.goes_layers import registry, TOP_STOPS, TOP_COLORS
+    return {'layers':registry(), 'palette':{'values':TOP_STOPS,'colors':TOP_COLORS}}
+
+
+@app.post('/api/satellite/regional/layer/{scene}/{layer}')
+def satellite_prepare_layer(scene: str, layer: str, _: dict = Depends(current_account)):
+    if get_settings().serverless:
+        from backend.app.adapters.cloud_weather import layer as prepare_layer
+    else:
+        from backend.app.adapters.goes_layers import prepare_layer
+    try:
+        return prepare_layer(scene,layer)
+    except ValueError as exc:
+        raise HTTPException(status_code=422,detail=str(exc))
+    except Exception:
+        raise HTTPException(status_code=503,detail='Fonte indisponível ou processamento ocupado; tente novamente.')
+
+
+@app.get('/api/satellite/regional/sample/{scene}/{layer}')
+def satellite_sample(scene: str, layer: str, lon: float, lat: float, _: dict = Depends(current_account)):
+    if get_settings().serverless:
+        from backend.app.adapters.cloud_weather import sample as sample_point
+    else:
+        from backend.app.adapters.goes_layers import sample_point
+    try:
+        return sample_point(scene,layer,lon,lat)
+    except ValueError as exc:
+        raise HTTPException(status_code=422,detail=str(exc))
+
+
+@app.get('/api/satellite/regional/winds')
+def regional_winds(end: str, _: dict = Depends(current_account)):
+    if get_settings().serverless:
+        from backend.app.adapters.cloud_weather import winds
+    else:
+        from backend.app.adapters.monitor_feeds import winds
+    try:
+        return winds(end)
+    except ValueError as exc:
+        raise HTTPException(status_code=422,detail=str(exc))
+    except Exception:
+        raise HTTPException(status_code=503,detail='Ventos em altitude indisponíveis na fonte')
+
+
+@app.get('/api/weather/surface')
+def surface_weather(_: dict = Depends(current_account)):
+    from backend.app.adapters.open_meteo_surface import surface, SurfaceUnavailable
+    try:
+        return surface()
+    except SurfaceUnavailable as exc:
+        raise HTTPException(status_code=503,detail=str(exc))
+
+
+@app.get('/api/weather/surface/point')
+def surface_weather_point(lat: float, lon: float, _: dict = Depends(current_account)):
+    from backend.app.adapters.open_meteo_surface import point, SurfaceUnavailable
+    try:
+        return point(lat,lon)
+    except ValueError as exc:
+        raise HTTPException(status_code=422,detail=str(exc))
+    except SurfaceUnavailable as exc:
+        raise HTTPException(status_code=503,detail=str(exc))
+
+
 _frontend_dir = Path(__file__).resolve().parents[3] / "frontend"
 app.mount("/", StaticFiles(directory=_frontend_dir, html=True), name="frontend")
